@@ -168,7 +168,9 @@ function App() {
 
   const checkDeselect = (e: KonvaEventObject<MouseEvent>) => {
     // deselect when clicked on empty area
-    const clickedOnEmpty = e.target.attrs.id !== selectedId;
+    const attributes = e.target.attrs;
+    const clickedOnEmpty =
+      attributes.id !== selectedId && !attributes.name?.includes("anchor");
     if (clickedOnEmpty) {
       selectShape(null);
     }
@@ -187,9 +189,10 @@ function App() {
   };
 
   const handleAddRectangle = () => {
+    const stage = stageRef.current as unknown as Konva.Stage;
     const newRectangle: RectangeType = {
-      x: 50,
-      y: 50,
+      x: stage.width() / 2 - 50,
+      y: stage.height() / 2 - 50,
       width: 100,
       height: 100,
       id: `rect${rectangles.length + 1}`,
@@ -239,6 +242,13 @@ function App() {
                     onChange={(newAttrs) => {
                       const rects = rectangles.slice();
                       rects[i] = newAttrs;
+                      setRectangles(rects);
+                    }}
+                    onRemove={() => {
+                      const rects = rectangles.filter(
+                        (item) => item.id !== rect.id,
+                      );
+
                       setRectangles(rects);
                     }}
                   />
