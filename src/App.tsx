@@ -1,11 +1,13 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import "./App.css";
-import { Layer, Stage, Image } from "react-konva";
+import { Layer, Stage, Image, Rect, Transformer } from "react-konva";
 import styled from "styled-components";
 import { KonvaEventObject } from "konva/lib/Node";
 import Konva from "konva";
 import { IconButton } from "@mui/material";
-import { SaveAs, ZoomIn, ZoomOut } from "@mui/icons-material";
+import { CropSquare, SaveAs, ZoomIn, ZoomOut } from "@mui/icons-material";
+import { Rectangle as RectangeType } from "./types";
+import Rectangle from "./Rectange";
 
 const Wrapper = styled.div`
   width: 100%;
@@ -27,9 +29,17 @@ const ToolsWrapper = styled.div`
   display: flex;
   flex-direction: column;
   position: absolute;
+  z-index: 1;
+`;
+
+const RightToolsWrapper = styled(ToolsWrapper)`
   bottom: 10px;
   right: 10px;
-  z-index: 1;
+`;
+
+const LeftToolsWrapper = styled(ToolsWrapper)`
+  top: 10px;
+  left: 10px;
 `;
 
 const WIDTH = 1400;
@@ -132,17 +142,6 @@ function App() {
     }
   };
 
-  if (stageRef.current) {
-    console.log(stageRef.current);
-  }
-
-  const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
-    if (e.target) {
-      setDragging(true);
-      setLastPointerPosition(e.target.getStage()!.getPointerPosition()!);
-    }
-  };
-
   const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
     if (!dragging) return;
 
@@ -162,6 +161,40 @@ function App() {
 
   const handleMouseUp = () => {
     setDragging(false);
+  };
+
+  const [rectangles, setRectangles] = useState<RectangeType[]>([]);
+  const [selectedId, selectShape] = React.useState<null | string>(null);
+
+  const checkDeselect = (e: KonvaEventObject<MouseEvent>) => {
+    // deselect when clicked on empty area
+    const clickedOnEmpty = e.target.attrs.id !== selectedId;
+    if (clickedOnEmpty) {
+      selectShape(null);
+    }
+  };
+
+  const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+    if (
+      e.target &&
+      (!(e.target instanceof Konva.Shape) || e.target instanceof Konva.Image)
+    ) {
+      setDragging(true);
+      setLastPointerPosition(e.target.getStage()!.getPointerPosition()!);
+    }
+
+    checkDeselect(e);
+  };
+
+  const handleAddRectangle = () => {
+    const newRectangle: RectangeType = {
+      x: 50,
+      y: 50,
+      width: 100,
+      height: 100,
+      id: `rect${rectangles.length + 1}`,
+    };
+    setRectangles([...rectangles, newRectangle]);
   };
 
   return (
@@ -192,9 +225,35 @@ function App() {
                 />
               )}
             </Layer>
+            <Layer>
+              {rectangles.map((rect, i) => {
+                return (
+                  <Rectangle
+                    key={i}
+                    shapeProps={rect}
+                    isSelected={rect.id === selectedId}
+                    onSelect={() => {
+                      selectShape(rect.id);
+                    }}
+                    // @ts-ignore
+                    onChange={(newAttrs) => {
+                      const rects = rectangles.slice();
+                      rects[i] = newAttrs;
+                      setRectangles(rects);
+                    }}
+                  />
+                );
+              })}
+            </Layer>
           </Stage>
 
-          <ToolsWrapper>
+          <LeftToolsWrapper>
+            <IconButton onClick={handleAddRectangle} color="primary">
+              <CropSquare />
+            </IconButton>
+          </LeftToolsWrapper>
+
+          <RightToolsWrapper>
             <IconButton onClick={exportToPNG} color="primary">
               <SaveAs />
             </IconButton>
@@ -204,7 +263,7 @@ function App() {
             <IconButton onClick={handleZoomOut} color="primary">
               <ZoomOut />
             </IconButton>
-          </ToolsWrapper>
+          </RightToolsWrapper>
         </div>
       </Wrapper>
     </div>
