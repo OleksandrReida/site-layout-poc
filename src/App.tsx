@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { Layer, Stage, Image } from "react-konva";
 import styled from "styled-components";
 import { KonvaEventObject } from "konva/lib/Node";
 import Konva from "konva";
 import { IconButton } from "@mui/material";
-import { ZoomIn, ZoomOut } from "@mui/icons-material";
+import { SaveAs, ZoomIn, ZoomOut } from "@mui/icons-material";
 
 const Wrapper = styled.div`
   width: 100%;
@@ -36,8 +36,17 @@ const WIDTH = 1400;
 const HEIGHT = 800;
 
 function App() {
+  const stageRef = useRef(null);
+
   const [image, setImage] = useState<null | HTMLImageElement>(null);
+
   const [scale, setScale] = useState(1);
+  const [dragging, setDragging] = useState(false);
+  const [lastPointerPosition, setLastPointerPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+  const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
 
   const handleImageUpload = (event: any) => {
     const file = event.target.files[0];
@@ -57,7 +66,6 @@ function App() {
   };
 
   const handleWheel = useCallback((e: KonvaEventObject<WheelEvent>) => {
-    console.log(e);
     e.evt.preventDefault();
     const stage = e.currentTarget as Konva.Stage;
     const oldScale = stage.scaleX();
@@ -75,7 +83,6 @@ function App() {
       x: pointer!.x - mousePointTo.x * newScale,
       y: pointer!.y - mousePointTo.y * newScale,
     };
-    stage.scale({ x: newScale, y: newScale });
     stage.position(newPos);
   }, []);
 
@@ -95,6 +102,68 @@ function App() {
   const imageWidth = image ? image.width * backgroundScale : 0;
   const imageHeight = image ? image.height * backgroundScale : 0;
 
+  const exportToPNG = () => {
+    const stage = stageRef.current as unknown as Konva.Stage;
+
+    if (stage) {
+      const originalScale = { x: stage.scaleX(), y: stage.scaleY() };
+      const originalPosition = { x: stage.x(), y: stage.y() };
+
+      stage.scale({ x: 1, y: 1 });
+      stage.position({ x: 0, y: 0 });
+      stage.batchDraw();
+
+      const dataURL = stage.toDataURL({
+        mimeType: "image/png",
+        quality: 1,
+        pixelRatio: window.devicePixelRatio,
+      });
+
+      stage.scale(originalScale);
+      stage.position(originalPosition);
+      stage.batchDraw();
+
+      const link = document.createElement("a");
+      link.href = dataURL;
+      link.download = "stage.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  if (stageRef.current) {
+    console.log(stageRef.current);
+  }
+
+  const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+    if (e.target) {
+      setDragging(true);
+      setLastPointerPosition(e.target.getStage()!.getPointerPosition()!);
+    }
+  };
+
+  const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+    if (!dragging) return;
+
+    const stage = e.target.getStage()!;
+    const pointerPosition = stage.getPointerPosition()!;
+    const dx = pointerPosition.x - lastPointerPosition.x;
+    const dy = pointerPosition.y - lastPointerPosition.y;
+
+    setStagePosition({
+      x: stagePosition.x + dx,
+      y: stagePosition.y + dy,
+    });
+    setLastPointerPosition(pointerPosition);
+    stage.position(stagePosition);
+    stage.batchDraw();
+  };
+
+  const handleMouseUp = () => {
+    setDragging(false);
+  };
+
   return (
     <div>
       <input type="file" accept="image/*" onChange={handleImageUpload} />
@@ -105,8 +174,12 @@ function App() {
             width={WIDTH}
             height={HEIGHT}
             onWheel={handleWheel}
-            scaleX={scale}
+            ref={stageRef}
             scaleY={scale}
+            scaleX={scale}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
           >
             <Layer>
               {image && (
@@ -122,6 +195,9 @@ function App() {
           </Stage>
 
           <ToolsWrapper>
+            <IconButton onClick={exportToPNG} color="primary">
+              <SaveAs />
+            </IconButton>
             <IconButton onClick={handleZoomIn} color="primary">
               <ZoomIn />
             </IconButton>
