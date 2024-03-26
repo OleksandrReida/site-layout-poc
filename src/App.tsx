@@ -140,7 +140,8 @@ function App() {
       x: pointer!.x - mousePointTo.x * newScale,
       y: pointer!.y - mousePointTo.y * newScale,
     };
-    stage.position(newPos);
+
+    setStagePosition(newPos);
   }, []);
 
   const handleZoomIn = () => {
@@ -197,13 +198,13 @@ function App() {
     const dx = pointerPosition.x - lastPointerPosition.x;
     const dy = pointerPosition.y - lastPointerPosition.y;
 
-    setStagePosition({
-      x: stagePosition.x + dx,
-      y: stagePosition.y + dy,
-    });
+    const newStagePosition = {
+      x: stagePosition.x + dx / scale,
+      y: stagePosition.y + dy / scale,
+    };
+
+    setStagePosition(newStagePosition);
     setLastPointerPosition(pointerPosition);
-    stage.position(stagePosition);
-    stage.batchDraw();
   };
 
   const handleMouseUp = () => {
@@ -297,6 +298,8 @@ function App() {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          x={stagePosition.x}
+          y={stagePosition.y}
         >
           <Layer>
             {image && (
