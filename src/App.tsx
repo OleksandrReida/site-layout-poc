@@ -375,7 +375,7 @@ function App() {
           <input
             type="file"
             accept=".json"
-            onChange={handleFileChange}
+            onInput={handleFileChange}
             style={{ display: "none" }}
             ref={jsonInputRef}
           />

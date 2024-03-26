@@ -63,13 +63,13 @@ const Rectangle: React.FC<Props> = ({
 
   return (
     <>
-      <Group ref={groupRef} draggable={editable}>
+      <Group ref={groupRef} draggable={false}>
         <Rect
           onClick={onSelect}
           onTap={onSelect}
           ref={shapeRef}
           {...shapeProps}
-          draggable={false}
+          draggable={editable}
           onDragMove={handleDragMove}
           onDragEnd={(e) => {
             onChange({
