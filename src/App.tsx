@@ -1,18 +1,23 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import "./App.css";
-import { Layer, Stage, Image, Rect, Transformer } from "react-konva";
+import { Layer, Stage, Image } from "react-konva";
 import styled from "styled-components";
 import { KonvaEventObject } from "konva/lib/Node";
 import Konva from "konva";
 import { IconButton } from "@mui/material";
-import { CropSquare, SaveAs, ZoomIn, ZoomOut } from "@mui/icons-material";
+import {
+  CloudUpload,
+  CropSquare,
+  SaveAs,
+  ZoomIn,
+  ZoomOut,
+} from "@mui/icons-material";
 import { Rectangle as RectangeType } from "./types";
 import Rectangle from "./Rectange";
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
-  padding: 24px 0;
 `;
 
 const Background = styled.div`
@@ -48,6 +53,7 @@ const HEIGHT = 800;
 function App() {
   const stageRef = useRef(null);
 
+  const fileInputRef = useRef(null);
   const [image, setImage] = useState<null | HTMLImageElement>(null);
 
   const [scale, setScale] = useState(1);
@@ -201,82 +207,93 @@ function App() {
   };
 
   return (
-    <div>
-      <input type="file" accept="image/*" onChange={handleImageUpload} />
-      <Wrapper>
-        <div style={{ position: "relative" }}>
-          <Background />
-          <Stage
-            width={WIDTH}
-            height={HEIGHT}
-            onWheel={handleWheel}
-            ref={stageRef}
-            scaleY={scale}
-            scaleX={scale}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            <Layer>
-              {image && (
-                <Image
-                  image={image}
-                  x={(WIDTH - imageWidth) / 2}
-                  y={(HEIGHT - imageHeight) / 2}
-                  width={imageWidth}
-                  height={imageHeight}
+    <Wrapper>
+      <div style={{ position: "relative" }}>
+        <Background />
+        <Stage
+          width={WIDTH}
+          height={HEIGHT}
+          onWheel={handleWheel}
+          ref={stageRef}
+          scaleY={scale}
+          scaleX={scale}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
+          <Layer>
+            {image && (
+              <Image
+                image={image}
+                x={(WIDTH - imageWidth) / 2}
+                y={(HEIGHT - imageHeight) / 2}
+                width={imageWidth}
+                height={imageHeight}
+              />
+            )}
+          </Layer>
+          <Layer>
+            {rectangles.map((rect, i) => {
+              return (
+                <Rectangle
+                  key={i}
+                  shapeProps={rect}
+                  isSelected={rect.id === selectedId}
+                  onSelect={() => {
+                    selectShape(rect.id);
+                  }}
+                  // @ts-ignore
+                  onChange={(newAttrs) => {
+                    const rects = rectangles.slice();
+                    rects[i] = newAttrs;
+                    setRectangles(rects);
+                  }}
+                  onRemove={() => {
+                    const rects = rectangles.filter(
+                      (item) => item.id !== rect.id,
+                    );
+
+                    setRectangles(rects);
+                  }}
                 />
-              )}
-            </Layer>
-            <Layer>
-              {rectangles.map((rect, i) => {
-                return (
-                  <Rectangle
-                    key={i}
-                    shapeProps={rect}
-                    isSelected={rect.id === selectedId}
-                    onSelect={() => {
-                      selectShape(rect.id);
-                    }}
-                    // @ts-ignore
-                    onChange={(newAttrs) => {
-                      const rects = rectangles.slice();
-                      rects[i] = newAttrs;
-                      setRectangles(rects);
-                    }}
-                    onRemove={() => {
-                      const rects = rectangles.filter(
-                        (item) => item.id !== rect.id,
-                      );
+              );
+            })}
+          </Layer>
+        </Stage>
 
-                      setRectangles(rects);
-                    }}
-                  />
-                );
-              })}
-            </Layer>
-          </Stage>
+        <LeftToolsWrapper>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ display: "none" }}
+            ref={fileInputRef}
+          />
+          <IconButton
+            color="primary"
+            //@ts-ignore
+            onClick={() => fileInputRef.current.click()}
+          >
+            <CloudUpload />
+          </IconButton>
+          <IconButton onClick={handleAddRectangle} color="primary">
+            <CropSquare />
+          </IconButton>
+        </LeftToolsWrapper>
 
-          <LeftToolsWrapper>
-            <IconButton onClick={handleAddRectangle} color="primary">
-              <CropSquare />
-            </IconButton>
-          </LeftToolsWrapper>
-
-          <RightToolsWrapper>
-            <IconButton onClick={exportToPNG} color="primary">
-              <SaveAs />
-            </IconButton>
-            <IconButton onClick={handleZoomIn} color="primary">
-              <ZoomIn />
-            </IconButton>
-            <IconButton onClick={handleZoomOut} color="primary">
-              <ZoomOut />
-            </IconButton>
-          </RightToolsWrapper>
-        </div>
-      </Wrapper>
-    </div>
+        <RightToolsWrapper>
+          <IconButton onClick={exportToPNG} color="primary">
+            <SaveAs />
+          </IconButton>
+          <IconButton onClick={handleZoomIn} color="primary">
+            <ZoomIn />
+          </IconButton>
+          <IconButton onClick={handleZoomOut} color="primary">
+            <ZoomOut />
+          </IconButton>
+        </RightToolsWrapper>
+      </div>
+    </Wrapper>
   );
 }
 
