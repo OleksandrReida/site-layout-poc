@@ -9,6 +9,8 @@ type Props = {
   onSelect: any;
   onChange: any;
   onRemove: any;
+  color?: string;
+  editable?: boolean;
 };
 
 const Rectangle: React.FC<Props> = ({
@@ -17,6 +19,8 @@ const Rectangle: React.FC<Props> = ({
   onSelect,
   onChange,
   onRemove,
+  color = "#00AEEF",
+  editable = true,
 }) => {
   const shapeRef = React.useRef(null);
   const trRef = React.useRef(null);
@@ -59,13 +63,13 @@ const Rectangle: React.FC<Props> = ({
 
   return (
     <>
-      <Group ref={groupRef} draggable>
+      <Group ref={groupRef} draggable={editable}>
         <Rect
           onClick={onSelect}
           onTap={onSelect}
           ref={shapeRef}
           {...shapeProps}
-          draggable
+          draggable={false}
           onDragMove={handleDragMove}
           onDragEnd={(e) => {
             onChange({
@@ -74,8 +78,8 @@ const Rectangle: React.FC<Props> = ({
               y: e.target.y(),
             });
           }}
-          stroke="#00AEEF"
-          fill="#00AEEF20"
+          stroke={color}
+          fill={`${color}20`}
           strokeWidth={1}
           cornerRadius={3}
           onTransformEnd={(e) => {

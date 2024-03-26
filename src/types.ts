@@ -4,4 +4,5 @@ export type Rectangle = {
   width: number;
   height: number;
   id: string;
+  alert?: boolean;
 };

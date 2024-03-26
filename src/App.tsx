@@ -4,10 +4,19 @@ import { Layer, Stage, Image } from "react-konva";
 import styled from "styled-components";
 import { KonvaEventObject } from "konva/lib/Node";
 import Konva from "konva";
-import { IconButton } from "@mui/material";
 import {
+  Button,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import {
+  AddAlert,
   CloudUpload,
   CropSquare,
+  ImportExport,
+  IosShare,
   SaveAs,
   ZoomIn,
   ZoomOut,
@@ -47,13 +56,45 @@ const LeftToolsWrapper = styled(ToolsWrapper)`
   left: 10px;
 `;
 
+const RightTopToolsWrapper = styled(ToolsWrapper)`
+  top: 10px;
+  right: 10px;
+`;
+
+const importJsonFromFile = (file: any) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (event: ProgressEvent<FileReader>) => {
+      try {
+        // @ts-ignore
+        const jsonData = JSON.parse(event.target.result);
+        resolve(jsonData);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    reader.readAsText(file);
+  });
+};
+
 const WIDTH = 1400;
 const HEIGHT = 800;
 
 function App() {
+  const [editMode, setEditMode] = useState(true);
+
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+
   const stageRef = useRef(null);
 
   const fileInputRef = useRef(null);
+  const jsonInputRef = useRef(null);
   const [image, setImage] = useState<null | HTMLImageElement>(null);
 
   const [scale, setScale] = useState(1);
@@ -206,6 +247,42 @@ function App() {
     setRectangles([...rectangles, newRectangle]);
   };
 
+  const exportToJson = useCallback(() => {
+    const blob = new Blob([JSON.stringify(rectangles)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "test.json";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }, [rectangles]);
+
+  const handleFileChange = async (event: any) => {
+    const file = event.target.files[0];
+    try {
+      const jsonData = await importJsonFromFile(file);
+      // @ts-ignore
+      setRectangles(jsonData);
+    } catch (error) {
+      console.error("Error importing JSON:", error);
+    }
+  };
+
+  const addAlert = () => {
+    setRectangles(
+      rectangles.map((rect, index) => {
+        if (index % 2 !== 0) {
+          return { ...rect, alert: true };
+        }
+        return rect;
+      }),
+    );
+  };
+
   return (
     <Wrapper>
       <div style={{ position: "relative" }}>
@@ -240,7 +317,9 @@ function App() {
                   shapeProps={rect}
                   isSelected={rect.id === selectedId}
                   onSelect={() => {
-                    selectShape(rect.id);
+                    if (editMode) {
+                      selectShape(rect.id);
+                    }
                   }}
                   // @ts-ignore
                   onChange={(newAttrs) => {
@@ -255,6 +334,14 @@ function App() {
 
                     setRectangles(rects);
                   }}
+                  color={
+                    highlighted === rect.id
+                      ? "#008000"
+                      : rect.alert
+                        ? "#FF0000"
+                        : undefined
+                  }
+                  editable={editMode}
                 />
               );
             })}
@@ -282,6 +369,23 @@ function App() {
         </LeftToolsWrapper>
 
         <RightToolsWrapper>
+          <IconButton onClick={exportToJson} color="primary">
+            <IosShare />
+          </IconButton>
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+            ref={jsonInputRef}
+          />
+          <IconButton
+            color="primary"
+            //@ts-ignore
+            onClick={() => jsonInputRef.current.click()}
+          >
+            <ImportExport />
+          </IconButton>
           <IconButton onClick={exportToPNG} color="primary">
             <SaveAs />
           </IconButton>
@@ -292,7 +396,32 @@ function App() {
             <ZoomOut />
           </IconButton>
         </RightToolsWrapper>
+
+        <RightTopToolsWrapper>
+          <IconButton onClick={addAlert} color="primary">
+            <AddAlert />
+          </IconButton>
+          <Button color="primary" onClick={() => setEditMode(!editMode)}>
+            {editMode ? "Disable" : "Enable"} edit
+          </Button>
+        </RightTopToolsWrapper>
       </div>
+      <List>
+        {rectangles.map((rectangle) => (
+          <ListItem
+            key={rectangle.id}
+            onClick={() => setHighlighted(rectangle.id)}
+          >
+            <ListItemText
+              primary={`ID: ${rectangle.id}`}
+              secondary={`Position: (${rectangle.x}, ${rectangle.y}), Size: ${rectangle.width}x${rectangle.height}`}
+              primaryTypographyProps={{
+                color: rectangle.alert ? "error" : "initial",
+              }}
+            />
+          </ListItem>
+        ))}
+      </List>
     </Wrapper>
   );
 }
