@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Group, Rect, Transformer, Text } from "react-konva";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
+import { Clear } from "@mui/icons-material";
 
 type Props = {
   shapeProps: any;
@@ -98,6 +99,7 @@ const Rectangle: React.FC<Props> = ({
               ...shapeProps,
               x: node.x(),
               y: node.y(),
+              rotation: node.rotation(),
               // set minimal value
               width: Math.max(5, node.width() * scaleX),
               height: Math.max(node.height() * scaleY),
