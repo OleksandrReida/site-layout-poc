@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Group, Rect, Transformer, Text } from "react-konva";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
@@ -12,6 +12,7 @@ type Props = {
   onRemove: any;
   color?: string;
   editable?: boolean;
+  id: number;
 };
 
 const Rectangle: React.FC<Props> = ({
@@ -22,6 +23,7 @@ const Rectangle: React.FC<Props> = ({
   onRemove,
   color = "#00AEEF",
   editable = true,
+  id,
 }) => {
   const shapeRef = React.useRef(null);
   const trRef = React.useRef(null);
@@ -30,11 +32,20 @@ const Rectangle: React.FC<Props> = ({
     x: shapeProps.x + shapeProps.width + 20,
     y: shapeProps.y - 30,
   });
+  const [textPosition, setTextPosition] = React.useState({
+    x: shapeProps.x + shapeProps.width / 4,
+    y: shapeProps.y + shapeProps.height / 2,
+  });
+  const [hover, setHover] = useState(false);
 
   useEffect(() => {
     setCrossPosition({
       x: shapeProps.x + shapeProps.width + 20,
       y: shapeProps.y - 30,
+    });
+    setTextPosition({
+      x: shapeProps.x + shapeProps.width / 4,
+      y: shapeProps.y + shapeProps.height / 2,
     });
   }, [shapeProps]);
 
@@ -59,6 +70,10 @@ const Rectangle: React.FC<Props> = ({
     setCrossPosition({
       x: x + rectNode.width() + 20,
       y: y - 30,
+    });
+    setTextPosition({
+      x: x + rectNode.width() / 4,
+      y: y + rectNode.height() / 2,
     });
   };
 
@@ -105,6 +120,12 @@ const Rectangle: React.FC<Props> = ({
               height: Math.max(node.height() * scaleY),
             });
           }}
+          onMouseOver={() => {
+            setHover(true);
+          }}
+          onMouseOut={() => {
+            setHover(false);
+          }}
         />
         {isSelected && (
           <Text
@@ -120,6 +141,14 @@ const Rectangle: React.FC<Props> = ({
             draggable={false}
             fontStyle="bold"
             {...crossPosition}
+          />
+        )}
+        {hover && (
+          <Text
+            text={`RL-100${id + 1}`}
+            fontSize={14}
+            draggable={false}
+            {...textPosition}
           />
         )}
       </Group>

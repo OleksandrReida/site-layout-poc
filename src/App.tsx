@@ -345,6 +345,7 @@ function App() {
                         : undefined
                   }
                   editable={editMode}
+                  id={i}
                 />
               );
             })}
