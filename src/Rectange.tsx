@@ -126,6 +126,9 @@ const Rectangle: React.FC<Props> = ({
           onMouseOut={() => {
             setHover(false);
           }}
+          onPointerClick={() => {
+            window.alert(`Asset RL-100${id + 1}`);
+          }}
         />
         {isSelected && (
           <Text
